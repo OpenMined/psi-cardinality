@@ -38,7 +38,7 @@ cc_library(
     name = "internal_utils",
     srcs = ["internal_utils.cpp"],
     hdrs = ["internal_utils.h"],
-    visibility = ["//visibility:private"],
+    #visibility = ["//visibility:private"],
     deps = [
         "@private_join_and_compute//util:status",
     ],

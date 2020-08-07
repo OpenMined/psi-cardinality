@@ -95,3 +95,13 @@ def psi_preload():
             strip_prefix = "rules_python_external-{version}".format(version = RULES_PYTHON_EXTERNAL_VERSION),
             url = "https://github.com/dillon-giacoppo/rules_python_external/archive/{version}.zip".format(version = RULES_PYTHON_EXTERNAL_VERSION),
         )
+
+    RULES_JVM_EXTERNAL_TAG = "3.3"
+    RULES_JVM_EXTERNAL_SHA = "d85951a92c0908c80bd8551002d66cb23c3434409c814179c0ff026b53544dab"
+    if "rules_jvm_external" not in native.existing_rules():
+        http_archive(
+            name = "rules_jvm_external",
+            strip_prefix = "rules_jvm_external-%s" % RULES_JVM_EXTERNAL_TAG,
+            sha256 = RULES_JVM_EXTERNAL_SHA,
+            url = "https://github.com/bazelbuild/rules_jvm_external/archive/%s.zip" % RULES_JVM_EXTERNAL_TAG,
+        )

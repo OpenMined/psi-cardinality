@@ -35,3 +35,8 @@ go_proto_library(
     importpath = "github.com/openmined/psi/pb",
     protos = [":psi_proto"],
 )
+
+java_proto_library(
+    name = "psi_java_proto",
+    deps = [":psi_proto"]
+)

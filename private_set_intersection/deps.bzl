@@ -24,6 +24,7 @@ load("@pybind11_bazel//:python_configure.bzl", "python_configure")
 load("@rules_python//python:repositories.bzl", "py_repositories")
 load("@rules_python_external//:repositories.bzl", "rules_python_external_dependencies")
 load("@rules_python_external//:defs.bzl", "pip_install")
+load("@rules_jvm_external//:defs.bzl", "maven_install")
 
 def psi_deps():
     # General dependencies.
@@ -118,3 +119,15 @@ def psi_deps():
     rules_pkg_dependencies()
 
     gazelle_dependencies()
+
+    # Java.
+    maven_install(
+        artifacts = [
+            "junit:junit:4.13"
+        ],
+        repositories = [
+            "https://repo.maven.apache.org/maven2",
+            "https://maven.google.com",
+            "https://jcenter.bintray.com/"
+        ]
+    )

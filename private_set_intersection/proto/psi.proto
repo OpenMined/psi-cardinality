@@ -17,6 +17,10 @@ syntax = "proto3";
 
 package psi_proto;
 
+// Java-specific options
+option java_package = "org.openmined.proto";
+option java_outer_classname = "PsiProto";
+
 // Setup phase message for server.
 message ServerSetup {
   int32 num_hash_functions = 1;
