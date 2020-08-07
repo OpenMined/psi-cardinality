@@ -61,10 +61,7 @@ JNIEXPORT jlong JNICALL Java_org_openmined_PsiServer_create_1from_1key
 }
 
 JNIEXPORT jbyteArray JNICALL Java_org_openmined_PsiServer_get_1private_1key_1bytes
-  (JNIEnv* env, jobject self) {
-    jclass self_class = env->GetObjectClass(self);
-    jfieldID ctx_field_id = env->GetFieldID(self_class, "psiServerCtx", "J");
-    jlong ctx_ptr = env->GetLongField(self, ctx_field_id);
+  (JNIEnv* env, jobject self, jlong ctx_ptr) {
     auto server = static_cast<PsiServer*>((psi_server_ctx)ctx_ptr);
 
     if (server == nullptr) {

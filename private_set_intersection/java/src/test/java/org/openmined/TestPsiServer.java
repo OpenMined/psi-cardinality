@@ -8,16 +8,16 @@ import org.openmined.PsiServer;
 
 public class TestPsiServer {
     @Test
-    public void test_create() throws Exception {
-        test_create_reveal(false);
-        test_create_reveal(true);
+    public void testCreate() throws Exception {
+        testCreateReveal(false);
+        testCreateReveal(true);
     }
 
-    private void test_create_reveal(boolean reveal) throws Exception {
+    private void testCreateReveal(boolean reveal) throws Exception {
         PsiServer server = new PsiServer(reveal);
-        byte[] key = server.get_private_key_bytes();
+        byte[] key = server.getPrivateKeyBytes();
         PsiServer new_server = new PsiServer(key, reveal);
-        assertArrayEquals(server.get_private_key_bytes(), new_server.get_private_key_bytes());
+        assertArrayEquals(server.getPrivateKeyBytes(), new_server.getPrivateKeyBytes());
 
         byte[] key2 = new byte[32];
 
@@ -26,6 +26,6 @@ public class TestPsiServer {
         }
 
         PsiServer server2 = new PsiServer(key2, reveal);
-        assertArrayEquals(server2.get_private_key_bytes(), key2.clone());
+        assertArrayEquals(server2.getPrivateKeyBytes(), key2.clone());
     }
 }
