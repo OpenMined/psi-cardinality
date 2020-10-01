@@ -39,5 +39,5 @@ go_proto_library(
 
 rust_proto_library(
     name = "psi_rust_proto",
-    deps = [":psi_proto"]
+    deps = [":psi_proto"],
 )

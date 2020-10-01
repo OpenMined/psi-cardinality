@@ -4,12 +4,12 @@ load("@org_openmined_psi_python_deps//:requirements.bzl", "requirement")
 pybind_extension(
     name = "_psi_bindings",
     srcs = ["psi_bindings.cpp"],
+    copts = [
+        "--std=c++17",
+    ],
     features = ["-use_header_modules"],
     linkstatic = True,
     visibility = ["//visibility:private"],
-    copts = [
-        "--std=c++17"
-    ],
     deps = [
         "//private_set_intersection/cpp:package",
         "//private_set_intersection/cpp:psi_client",
