@@ -6,18 +6,20 @@
 namespace private_set_intersection {
 namespace {
 
+int num_server_inputs = 1000000;
+double FPR = 0.000000001;
+
 void BM_ServerSetup(benchmark::State &state, double fpr,
                     bool reveal_intersection) {
   psi_server_ctx server_;
   char *err;
   psi_server_create_with_new_key(reveal_intersection, &server_, &err);
 
-  int num_inputs = state.range(0);
-  int num_client_inputs = 10000;
-  std::vector<std::string> orig_inputs(num_inputs);
-  std::vector<psi_server_buffer_t> inputs(num_inputs);
+  int num_client_inputs = state.range(0);
+  std::vector<std::string> orig_inputs(num_server_inputs);
+  std::vector<psi_server_buffer_t> inputs(num_server_inputs);
 
-  for (int i = 0; i < num_inputs; i++) {
+  for (int i = 0; i < num_server_inputs; i++) {
     orig_inputs[i] = absl::StrCat("Element", i);
     inputs[i] = {orig_inputs[i].c_str(), orig_inputs[i].size()};
   }
@@ -32,7 +34,7 @@ void BM_ServerSetup(benchmark::State &state, double fpr,
 
     ::benchmark::DoNotOptimize(server_setup);
     ::benchmark::ClobberMemory();
-    elements_processed += num_inputs;
+    elements_processed += num_server_inputs;
     setup = server_setup;
 
     free(server_setup);
@@ -46,18 +48,9 @@ void BM_ServerSetup(benchmark::State &state, double fpr,
 
 // Range is for the number of inputs, and the captured argument is the false
 // positive rate for 10k client queries.
-BENCHMARK_CAPTURE(BM_ServerSetup, 0.001 size, 0.001, false)
-    ->RangeMultiplier(100)
-    ->Range(1, 1000000);
-BENCHMARK_CAPTURE(BM_ServerSetup, 0.000001 size, 0.000001, false)
-    ->RangeMultiplier(100)
-    ->Range(1, 1000000);
-BENCHMARK_CAPTURE(BM_ServerSetup, 0.001 intersection, 0.001, true)
-    ->RangeMultiplier(100)
-    ->Range(1, 1000000);
-BENCHMARK_CAPTURE(BM_ServerSetup, 0.000001 intersection, 0.000001, true)
-    ->RangeMultiplier(100)
-    ->Range(1, 1000000);
+BENCHMARK_CAPTURE(BM_ServerSetup, 0.000001 intersection, FPR, true)
+    ->RangeMultiplier(10)
+    ->Range(1000, 100000);
 
 void BM_ClientCreateRequest(benchmark::State &state, bool reveal_intersection) {
   psi_client_ctx client_;
@@ -94,12 +87,9 @@ void BM_ClientCreateRequest(benchmark::State &state, bool reveal_intersection) {
       static_cast<double>(elements_processed), benchmark::Counter::kIsRate);
 }
 // Range is for the number of inputs.
-BENCHMARK_CAPTURE(BM_ClientCreateRequest, size, false)
-    ->RangeMultiplier(10)
-    ->Range(1, 10000);
 BENCHMARK_CAPTURE(BM_ClientCreateRequest, intersection, true)
     ->RangeMultiplier(10)
-    ->Range(1, 10000);
+    ->Range(1000, 100000);
 
 void BM_ServerProcessRequest(benchmark::State &state,
                              bool reveal_intersection) {
@@ -148,12 +138,9 @@ void BM_ServerProcessRequest(benchmark::State &state,
 }
 
 // Range is for the number of inputs.
-BENCHMARK_CAPTURE(BM_ServerProcessRequest, size, false)
-    ->RangeMultiplier(10)
-    ->Range(1, 10000);
 BENCHMARK_CAPTURE(BM_ServerProcessRequest, intersection, true)
     ->RangeMultiplier(10)
-    ->Range(1, 10000);
+    ->Range(1000, 100000);
 
 void BM_ClientProcessResponse(benchmark::State &state,
                               bool reveal_intersection) {
@@ -163,22 +150,24 @@ void BM_ClientProcessResponse(benchmark::State &state,
   psi_client_create_with_new_key(reveal_intersection, &client_, &err);
   psi_server_create_with_new_key(reveal_intersection, &server_, &err);
 
-  int num_inputs = state.range(0);
-  double fpr = 1. / (1000000);
-  std::vector<std::string> inputs_orig(num_inputs);
-  std::vector<psi_server_buffer_t> srv_inputs(num_inputs);
-  std::vector<psi_client_buffer_t> cl_inputs(num_inputs);
-  for (int i = 0; i < num_inputs; i++) {
+  int num_client_inputs = state.range(0);
+  double fpr = FPR;
+  std::vector<std::string> inputs_orig(num_server_inputs);
+  std::vector<psi_server_buffer_t> srv_inputs(num_server_inputs);
+  std::vector<psi_client_buffer_t> cl_inputs(num_client_inputs);
+  for (int i = 0; i < num_server_inputs; i++) {
     inputs_orig[i] = absl::StrCat("Element", i);
     srv_inputs[i] = {inputs_orig[i].c_str(), inputs_orig[i].size()};
+  }
+  for (int i = 0; i < num_client_inputs; i++) {
     cl_inputs[i] = {inputs_orig[i].c_str(), inputs_orig[i].size()};
   }
 
   char *server_setup = nullptr;
   size_t server_setup_buff_len = 0;
-  psi_server_create_setup_message(server_, fpr, num_inputs, srv_inputs.data(),
-                                  srv_inputs.size(), &server_setup,
-                                  &server_setup_buff_len, &err);
+  psi_server_create_setup_message(server_, fpr, num_client_inputs,
+                                  srv_inputs.data(), srv_inputs.size(),
+                                  &server_setup, &server_setup_buff_len, &err);
 
   char *client_request = nullptr;
   size_t req_len = 0;
@@ -206,7 +195,7 @@ void BM_ClientProcessResponse(benchmark::State &state,
           {server_response, response_len}, &count, &err);
       ::benchmark::DoNotOptimize(count);
     }
-    elements_processed += num_inputs;
+    elements_processed += num_client_inputs;
   }
 
   free(server_setup);
@@ -217,12 +206,9 @@ void BM_ClientProcessResponse(benchmark::State &state,
       static_cast<double>(elements_processed), benchmark::Counter::kIsRate);
 }
 // Range is for the number of inputs.
-BENCHMARK_CAPTURE(BM_ClientProcessResponse, size, false)
-    ->RangeMultiplier(10)
-    ->Range(1, 10000);
 BENCHMARK_CAPTURE(BM_ClientProcessResponse, intersection, true)
     ->RangeMultiplier(10)
-    ->Range(1, 10000);
+    ->Range(1000, 100000);
 
 }  // namespace
 }  // namespace private_set_intersection
