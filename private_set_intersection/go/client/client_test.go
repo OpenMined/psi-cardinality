@@ -180,11 +180,13 @@ func benchmarkClientCreateRequest(cnt int, revealIntersection bool, b *testing.B
 	b.ReportMetric(float64(total), "ElementsProcessed")
 }
 
+func BenchmarkClientCreateRequest1000(b *testing.B) { benchmarkClientCreateRequest(1000, true, b) }
+func BenchmarkClientCreateRequest10000(b *testing.B) { benchmarkClientCreateRequest(10000, true, b) }
 func BenchmarkClientCreateRequest100000(b *testing.B) { benchmarkClientCreateRequest(100000, true, b) }
 
 var dummyInt64 int64
 
-func benchmarkClientProcessResponse(cnt int, revealIntersection bool, b *testing.B) {
+func benchmarkClientProcessResponse(clientCnt int, revealIntersection bool, b *testing.B) {
 	client, err := CreateWithNewKey(revealIntersection)
 	if err != nil || client == nil {
 		b.Errorf("failed to get client")
@@ -194,18 +196,23 @@ func benchmarkClientProcessResponse(cnt int, revealIntersection bool, b *testing
 		b.Errorf("failed to get server")
 	}
 
-	fpr := 1. / (1000000)
+	fpr := 1. / (1000000000)
 
-	inputs := []string{}
-	for i := 0; i < cnt; i++ {
-		inputs = append(inputs, "Element "+string(i))
+    serverCnt := 1000000
+	clientInputs := []string{}
+	serverInputs := []string{}
+	for i := 0; i < serverCnt; i++ {
+		serverInputs = append(serverInputs, "Element "+string(i))
+	}
+	for i := 0; i < clientCnt; i++ {
+		clientInputs = append(clientInputs, "Element "+string(i))
 	}
 
-	setup, err := server.CreateSetupMessage(fpr, int64(cnt), inputs)
+	setup, err := server.CreateSetupMessage(fpr, int64(clientCnt), serverInputs)
 	if err != nil {
 		b.Errorf("failed to create setup msg %v", err)
 	}
-	request, err := client.CreateRequest(inputs)
+	request, err := client.CreateRequest(clientInputs)
 	if err != nil {
 		b.Errorf("failed to create request %v", err)
 	}
@@ -223,7 +230,7 @@ func benchmarkClientProcessResponse(cnt int, revealIntersection bool, b *testing
 				b.Errorf("failed to compute intersection %v", err)
 			}
 			intersectionSet := generateSet(intersection)
-			for idx := 0; idx < cnt; idx++ {
+			for idx := 0; idx < clientCnt; idx++ {
 				_, ok := intersectionSet[idx]
 				if !ok {
 					b.Errorf("Invalid intersection for item %v", idx)
@@ -234,12 +241,20 @@ func benchmarkClientProcessResponse(cnt int, revealIntersection bool, b *testing
 			if err != nil {
 				b.Errorf("failed to process response %v", err)
 			}
-			total += cnt
+			total += clientCnt
 			//ugly hack for preventing compiler optimizations
 			dummyInt64 = intersectionCnt
 		}
 	}
 	b.ReportMetric(float64(total), "ElementsProcessed")
+}
+
+func BenchmarkClientProcessResponseIntersection1000(b *testing.B) {
+	benchmarkClientProcessResponse(1000, true, b)
+}
+
+func BenchmarkClientProcessResponseIntersection10000(b *testing.B) {
+	benchmarkClientProcessResponse(10000, true, b)
 }
 
 func BenchmarkClientProcessResponseIntersection100000(b *testing.B) {

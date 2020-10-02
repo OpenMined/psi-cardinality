@@ -165,35 +165,41 @@ func TestServerClient(t *testing.T) {
 
 var dummyString *psi_proto.ServerSetup
 
-func benchmarkServerSetup(cnt int, fpr float64, revealIntersection bool, b *testing.B) {
+func benchmarkServerSetup(clientCnt int, fpr float64, revealIntersection bool, b *testing.B) {
 
 	server, err := CreateWithNewKey(revealIntersection)
 	if err != nil || server == nil {
 		b.Errorf("failed to get server")
 	}
 
+	serverCnt := 1000000
 	inputs := []string{}
-	for i := 0; i < cnt; i++ {
+	for i := 0; i < serverCnt; i++ {
 		inputs = append(inputs, "Element "+string(i))
 	}
 
-	numClientInputs := 10000
 	b.ReportAllocs()
 	total := 0
 	for n := 0; n < b.N; n++ {
-		setup, err := server.CreateSetupMessage(fpr, int64(numClientInputs), inputs)
+		setup, err := server.CreateSetupMessage(fpr, int64(clientCnt), inputs)
 		if err != nil {
 			b.Errorf("failed to create setup msg %v", err)
 		}
-		total += cnt
+		total += serverCnt
 		//ugly hack for preventing compiler optimizations
 		dummyString = setup
 	}
 	b.ReportMetric(float64(total), "ElementsProcessed")
 }
 
-const fpr6 = 0.000001
+const fpr6 = 0.000000001
 
+func BenchmarkServerSetupIntersection1000fpr6(b *testing.B) {
+	benchmarkServerSetup(1000, fpr6, true, b)
+}
+func BenchmarkServerSetupIntersection10000fpr6(b *testing.B) {
+	benchmarkServerSetup(10000, fpr6, true, b)
+}
 func BenchmarkServerSetupIntersection100000fpr6(b *testing.B) {
 	benchmarkServerSetup(100000, fpr6, true, b)
 }
@@ -210,12 +216,12 @@ func benchmarkServerProcessRequest(cnt int, revealIntersection bool, b *testing.
 		b.Errorf("failed to get server")
 	}
 
-	inputs := []string{}
+	clientInputs := []string{}
 	for i := 0; i < cnt; i++ {
-		inputs = append(inputs, "Element "+string(i))
+		clientInputs = append(clientInputs, "Element "+string(i))
 	}
 
-	request, err := client.CreateRequest(inputs)
+	request, err := client.CreateRequest(clientInputs)
 	if err != nil {
 		b.Errorf("failed to create request %v", err)
 	}
@@ -233,6 +239,14 @@ func benchmarkServerProcessRequest(cnt int, revealIntersection bool, b *testing.
 		dummyResponse = serverResp
 	}
 	b.ReportMetric(float64(total), "ElementsProcessed")
+}
+
+func BenchmarkServerProcessRequestIntersection1000(b *testing.B) {
+	benchmarkServerProcessRequest(1000, true, b)
+}
+
+func BenchmarkServerProcessRequestIntersection10000(b *testing.B) {
+	benchmarkServerProcessRequest(10000, true, b)
 }
 
 func BenchmarkServerProcessRequestIntersection100000(b *testing.B) {
